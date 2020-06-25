@@ -1,60 +1,88 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python3
 
 from bs4 import BeautifulSoup
 import ast
 import requests
 import re
 import sys
+import pprint
 
+# Verify user supplied a YouTube URL.
 if len(sys.argv) == 1:
     print("Usage : YoutubeChatReplayCrawler.py {Target Youtube URL} to crawl chat replays of Target Youtube URL.");
     sys.exit(0);
 
+# Set up variables for requests.
 target_url = sys.argv[1]
 dict_str = ""
 next_url = ""
 comment_data = []
 session = requests.Session()
-headers = {'user-agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36'}
+headers = {'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'}
 
-# まず動画ページにrequestsを実行しhtmlソースを手に入れてlive_chat_replayの先頭のurlを入手
+# Get the video page.
 html = session.get(target_url)
 soup = BeautifulSoup(html.text, "html.parser")
+
+# Produce a valid filename (from Django text utils).
+def get_valid_filename(s):
+    s = str(s).strip().replace(' ', '_')
+    return re.sub(r'(?u)[^-\w.]', '', s)
+
+# Retrieve the title and sanitize so it is a valid filename.
 title = soup.find_all("title")
-title = "".join(title[0].text.split("-")[:-1])
-INVALID_FILENAME = "\\/:*?\"<>|"
-for frag in INVALID_FILENAME:
-    title = title.replace(frag,"")
+title = title[0].text.replace(" - YouTube","")
+title = get_valid_filename(title)
+
+# Regex match for emoji.
 RE_EMOJI = re.compile('[\U00010000-\U0010ffff]', flags=re.UNICODE)
+
+# Find any live_chat_replay elements, get URL for next live chat message.
 for iframe in soup.find_all("iframe"):
     if("live_chat_replay" in iframe["src"]):
         next_url= iframe["src"]
 
-print(next_url)
+if not next_url:
+    print("Couldn't find live_chat_replay iframe. Maybe try running again?");
+    sys.exit(1);
+
+# TODO - We should fail fast if next_url is empty, otherwise you get error:
+# Invalid URL '': No schema supplied. Perhaps you meant http://?
+
+# TODO - This loop is fragile. It loops endlessly when some exceptions are hit.
 while(1):
 
     try:
         html = session.get(next_url, headers=headers)
         soup = BeautifulSoup(html.text,"lxml")
-        
 
-        # 次に飛ぶurlのデータがある部分をfind_allで探してsplitで整形
-        for scrp in soup.find_all("script"):
-            if "window[\"ytInitialData\"]" in scrp.text:
-                dict_str = ''.join(scrp.text.split(" = ")[1:])
+        # Loop through all script tags.
+        for script in soup.find_all("script"):
+            script_text = str(script)
+            if 'ytInitialData' in script_text:
+                dict_str = ''.join(script_text.split(" = ")[1:])
 
-        # javascript表記なので更に整形. falseとtrueの表記を直す
+        # Capitalize booleans so JSON is valid Python dict.
         dict_str = dict_str.replace("false","False")
         dict_str = dict_str.replace("true","True")
 
-        # 辞書形式と認識すると簡単にデータを取得できるが, 末尾に邪魔なのがあるので消しておく（「空白2つ + \n + ;」を消す）
+        # Strip extra HTML from JSON.
+        dict_str = re.sub(r'};.*\n.+<\/script>', '}', dict_str)
+
+        # Correct some characters.
         dict_str = dict_str.rstrip("  \n;")
-        dict_str = RE_EMOJI.sub(r'', dict_str)
-        # 辞書形式に変換
+
+        # TODO: I don't seem to have any issues with emoji in the messages.
+        # dict_str = RE_EMOJI.sub(r'', dict_str)
+
+        # Evaluate the cleaned up JSON into a python dict.
         dics = ast.literal_eval(dict_str)
 
         # "https://www.youtube.com/live_chat_replay?continuation=" + continue_url が次のlive_chat_replayのurl
+        # TODO: On the last pass this returns KeyError since there are no more
+        # continuations or actions. Should probably just break in that case.
         continue_url = dics["continuationContents"]["liveChatContinuation"]["continuations"][0]["liveChatReplayContinuationData"]["continuation"]
+        print('Found another live chat continuation:')
         print(continue_url)
         next_url = "https://www.youtube.com/live_chat_replay?continuation=" + continue_url
         # dics["continuationContents"]["liveChatContinuation"]["actions"]がコメントデータのリスト。先頭はノイズデータなので[1:]で保存
@@ -75,18 +103,25 @@ while(1):
         print(e)
         break
     except KeyError as e:
-        print("KeyError")
-        print(e)
+        error = str(e)
+        if 'liveChatReplayContinuationData' in error:
+            print('Hit last live chat segment, finishing job.')
+        else:
+            print("KeyError")
+            print(e)
         break
     except SyntaxError as e:
         print("SyntaxError")
         print(e)
-        continue
+        break
+        # continue #TODO
     except KeyboardInterrupt as e:
         break
     except :
         print("Unexpected error:" + str(sys.exc_info()[0]))
 
-# comment_data.txt にコメントデータを書き込む
-with open(title+".json", mode='w', encoding="utf-8") as f:
+# Write the comment data to a file named after the title of the video.
+with open(title + ".json", mode='w', encoding="utf-8") as f:
     f.writelines(comment_data)
+
+print('Comment data saved to ' + title + '.json')

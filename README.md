@@ -1,34 +1,28 @@
-# youtube_chat_crawler(KR)
+# YouTube Chat Crawler
 
-유튜브 스트리밍에서의 liveChat 데이터를 크롤링하는 Python 3 script입니다.
+This Python script crawls and saves live chat messages from finished YouTube livestreams.
 
-원본 코드는 雑記帳(@watagasi)님의 코드를 참조했습니다. (http://watagassy.hatenablog.com/entry/2018/10/08/132939)
+This is a fork from [kkorona/youtube_chat_crawler](https://github.com/kkorona/youtube_chat_crawler), which is itself bundled [from a blog post](http://watagassy.hatenablog.com/entry/2018/10/08/132939) from 雑記帳 (@watagasi).
 
-원본 코드에서는 liveChat 내용에서 '=' 가 포함되어있으면 작동이 제대로 되지 않습니다.
+You must have Python 3.x installed on your system, and have the following requirements installed (e.g. via `pip3 install`):
 
-Python 3.x를 요구하며, bs4 / requests / ast 모듈의 설치를 요구합니다.
+  - `bs4`
+  - `lxml`
+  - `request`
+  - `ast` (should be part of stdlib)
 
-사용법 : python YoutubeChatReplayCrawler.py {유튜브 스트리밍 링크}
+## Usage
 
-(예 : python YoutubeChatReplayCrawler.py https://www.youtube.com/watch?v=WuMzBTDz9DI)
+Run the command:
 
-이러면 해당 방송의 제목을 이름으로 가지는 json 파일이 생성됩니다.
+    ./YoutubeChatReplayCrawler.py YOUTUBE_VIDEO_URL
 
-python chatReplayConverter.py 명령을 통해 해당 json 파일을 알아보기 쉬운 text file 형태로 변환할 수 있습니다. chatReplayConverter.py는 해당 스크립트가 포함된 폴더 내의 모든 json 파일을 text 형식으로 변환합니다.
+This dumps a json file to the current directory, containing all the stream data.
 
-# youtube_chat_crawler(EN)
-youtube_chat_crawler crawls liveChat messages from finished live stream.
+## Converting the JSON to text
 
-I've forked the original source code from 雑記帳(@watagasi). ( http://watagassy.hatenablog.com/entry/2018/10/08/132939 )
+Run the command:
 
-Added minor fixes (like parsing problems)
+    python3 chatReplayConverter.py
 
-Python 3.x, bs4 / request / ast module is required.
-
-Usage : python3 YoutubeChatReplayCrawler.py {YOUR_TARGET_STREAM_LINK}
-
-(example : python YoutubeChatReplayCrawler.py https://www.youtube.com/watch?v=WuMzBTDz9DI)
-
-You can get a json file, which contains the live stream chat data.
-
-chatReplayConverter.py converts all the json file in the same directory to easy-to-read text file form.
+And all the .json files in the current directory will be converted into an easy-to-read text file form.

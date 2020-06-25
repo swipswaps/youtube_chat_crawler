@@ -1,6 +1,9 @@
+#!/usr/bin/env python3
+
 import glob
 import ast
 import sys
+
 for filename in glob.glob('*.json'):
     print(filename)
     target_id = filename.split('.')[0]
@@ -20,7 +23,7 @@ for filename in glob.glob('*.json'):
             ql = line
             frac = ("#Chat No.%05d " % count)
             info = ast.literal_eval(ql)
-            
+
             #Case Normal Chat
             if 'liveChatTextMessageRenderer' in line:
                 info = info['replayChatItemAction']['actions'][0]['addChatItemAction']['item']['liveChatTextMessageRenderer']
@@ -38,7 +41,6 @@ for filename in glob.glob('*.json'):
                 time = info['timestampText']['simpleText']
                 frac += "type: NORMALCHAT user: \"" + authorName + "\" time: " + time + "\n- " + content + "\n" 
 
-            
             #Case Super Chat
             if 'liveChatPaidMessageRenderer' in line:
                 info = info['replayChatItemAction']['actions'][0]['addChatItemAction']['item']['liveChatPaidMessageRenderer']
@@ -53,7 +55,7 @@ for filename in glob.glob('*.json'):
                     else:
                         print("no text")
                         continue
-                 
+
                 if 'authorName' in info:
                     authorName = info['authorName']['simpleText']
                 else:
@@ -63,7 +65,6 @@ for filename in glob.glob('*.json'):
                 frac += "type: SUPERCHAT user: \"" + authorName + "\" time: " + time + " amount: " + purchaseAmout + "\n- " + content + "\n" 
             result += frac
             count += 1
-            
 
     target_id = filename.split('.')[0]
     sys.stdout.write('\nDone!')
