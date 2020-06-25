@@ -4,14 +4,13 @@ This Python script crawls and saves live chat messages from finished YouTube liv
 
 This is a fork from [kkorona/youtube_chat_crawler](https://github.com/kkorona/youtube_chat_crawler), which is itself bundled [from a blog post](http://watagassy.hatenablog.com/entry/2018/10/08/132939) from 雑記帳 (@watagasi).
 
-You must have Python 3.x installed on your system, and have the following requirements installed (e.g. via `pip3 install`):
-
-  - `bs4`
-  - `lxml`
-  - `request`
-  - `ast` (should be part of stdlib)
+Requires Python 3.x
 
 ## Usage
+
+Make sure you have all the requirements installed:
+
+    pip3 install bs4 lxml request
 
 Run the command:
 
