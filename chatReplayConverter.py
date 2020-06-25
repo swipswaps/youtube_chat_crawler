@@ -7,24 +7,24 @@ import sys
 for filename in glob.glob('*.json'):
     print(filename)
     target_id = filename.split('.')[0]
-    if glob.glob(target_id+".txt"):
+    if glob.glob(target_id + ".txt"):
         print("Exists")
         continue
     count = 1
     result = ""
-    with open(filename,'r',encoding='utf8') as f:
+    with open(filename, 'r', encoding='utf8') as f:
         lines = f.readlines()
         for line in lines:
             sys.stdout.write('\rProcessing line %d' % (count))
             if 'liveChatTickerPaidMessageItemRenderer' in line:
                 continue
-            if not 'liveChatTextMessageRenderer' in line and not 'liveChatPaidMessageRenderer' in line:
+            if 'liveChatTextMessageRenderer' not in line and 'liveChatPaidMessageRenderer' not in line:
                 continue
             ql = line
             frac = ("#Chat No.%05d " % count)
             info = ast.literal_eval(ql)
 
-            #Case Normal Chat
+            # Case Normal Chat
             if 'liveChatTextMessageRenderer' in line:
                 info = info['replayChatItemAction']['actions'][0]['addChatItemAction']['item']['liveChatTextMessageRenderer']
                 content = ""
@@ -39,9 +39,9 @@ for filename in glob.glob('*.json'):
                     continue
                 authorName = info['authorName']['simpleText']
                 time = info['timestampText']['simpleText']
-                frac += "type: NORMALCHAT user: \"" + authorName + "\" time: " + time + "\n- " + content + "\n" 
+                frac += "type: NORMALCHAT user: \"" + authorName + "\" time: " + time + "\n- " + content + "\n"
 
-            #Case Super Chat
+            # Case Super Chat
             if 'liveChatPaidMessageRenderer' in line:
                 info = info['replayChatItemAction']['actions'][0]['addChatItemAction']['item']['liveChatPaidMessageRenderer']
                 content = ""
@@ -62,11 +62,11 @@ for filename in glob.glob('*.json'):
                     authorName = "%anonymous%"
                 time = info['timestampText']['simpleText']
                 purchaseAmout = info['purchaseAmountText']['simpleText']
-                frac += "type: SUPERCHAT user: \"" + authorName + "\" time: " + time + " amount: " + purchaseAmout + "\n- " + content + "\n" 
+                frac += "type: SUPERCHAT user: \"" + authorName + "\" time: " + time + " amount: " + purchaseAmout + "\n- " + content + "\n"
             result += frac
             count += 1
 
     target_id = filename.split('.')[0]
     sys.stdout.write('\nDone!')
-    with open(target_id+".txt",'w',encoding='utf8') as f:
+    with open(target_id + ".txt", 'w', encoding='utf8') as f:
         f.write(result)
