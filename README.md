@@ -12,7 +12,7 @@ Requires Python 3.x
 
 Make sure you have all the requirements installed:
 
-    pip3 install bs4 lxml request
+    pip3 install bs4 lxml requests
 
 Run the command:
 
